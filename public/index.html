@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EIN Search</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; color: #333; }
+
+    header { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 20px; font-weight: 600; color: #111; }
+    header span { font-size: 13px; color: #aaa; }
+
+    .main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+
+    /* 筛选面板 */
+    .filters { background: #fff; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 12px; color: #888; }
+    .filter-group input,
+    .filter-group select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: #fff; outline: none; }
+    .filter-group input:focus,
+    .filter-group select:focus { border-color: #4f8ef7; }
+    #q { width: 240px; }
+    .filter-actions { display: flex; gap: 8px; margin-left: auto; align-items: flex-end; }
+    .btn { padding: 8px 18px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    .btn-primary { background: #4f8ef7; color: #fff; }
+    .btn-primary:hover { background: #3a7de0; }
+    .btn-reset { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+    .btn-reset:hover { background: #eee; }
+
+    /* 统计栏 */
+    .meta { font-size: 13px; color: #888; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* 表格 */
+    .table-wrap { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f7f9ff; text-align: left; padding: 11px 14px; font-size: 13px; color: #555; border-bottom: 1px solid #eee; white-space: nowrap; cursor: pointer; user-select: none; }
+    th:hover { background: #eef1ff; }
+    th .arrow { margin-left: 4px; color: #bbb; }
+    th.active .arrow { color: #4f8ef7; }
+    td { padding: 10px 14px; font-size: 14px; border-top: 1px solid #f3f3f3; }
+    tr:hover td { background: #fafbff; }
+    a { color: #4f8ef7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .tag-null { color: #ccc; font-size: 12px; }
+    .ein-col { font-family: monospace; color: #555; }
+
+    /* 分页 */
+    .pagination { display: flex; gap: 4px; margin-top: 16px; justify-content: center; flex-wrap: wrap; }
+    .pagination button { min-width: 34px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+    .pagination button.active { background: #4f8ef7; color: #fff; border-color: #4f8ef7; }
+    .pagination button:hover:not(.active):not(:disabled) { background: #f0f4ff; }
+    .pagination button:disabled { color: #ccc; cursor: default; }
+
+    .empty { text-align: center; padding: 60px; color: #bbb; font-size: 15px; }
+    .loading { text-align: center; padding: 60px; color: #aaa; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>EIN Search</h1>
+  <span>ein25 · haveletter25</span>
+</header>
+
+<div class="main">
+  <!-- 筛选 -->
+  <div class="filters">
+    <div class="filter-group">
+      <label>搜索</label>
+      <input id="q" type="text" placeholder="输入关键词..." />
+    </div>
+    <div class="filter-group">
+      <label>搜索字段</label>
+      <select id="type">
+        <option value="name">Name</option>
+        <option value="ein">EIN</option>
+        <option value="website">Website</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>日期从</label>
+      <input id="dateFrom" type="date" />
+    </div>
+    <div class="filter-group">
+      <label>日期到</label>
+      <input id="dateTo" type="date" />
+    </div>
+    <div class="filter-group">
+      <label>网站</label>
+      <select id="hasWebsite">
+        <option value="">全部</option>
+        <option value="yes">有网站</option>
+        <option value="no">无网站</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>排序</label>
+      <select id="sort">
+        <option value="date_desc">日期 ↓</option>
+        <option value="date_asc">日期 ↑</option>
+        <option value="name_asc">名称 A-Z</option>
+        <option value="name_desc">名称 Z-A</option>
+        <option value="ein_asc">EIN ↑</option>
+        <option value="ein_desc">EIN ↓</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-reset" onclick="reset()">重置</button>
+      <button class="btn btn-primary" onclick="doSearch(1)">搜索</button>
+    </div>
+  </div>
+
+  <div class="meta">
+    <span id="meta"></span>
+  </div>
+
+  <div class="table-wrap">
+    <div id="result"><div class="empty">输入条件后点击搜索，或直接点搜索浏览全部数据</div></div>
+  </div>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script>
+  let currentPage = 1;
+  let currentTotal = 0;
+  const PAGE_SIZE = 20;
+
+  document.getElementById("q").addEventListener("keydown", e => {
+    if (e.key === "Enter") doSearch(1);
+  });
+
+  // 页面加载默认展示全部
+  window.onload = () => doSearch(1);
+
+  function reset() {
+    document.getElementById("q").value = "";
+    document.getElementById("type").value = "name";
+    document.getElementById("dateFrom").value = "";
+    document.getElementById("dateTo").value = "";
+    document.getElementById("hasWebsite").value = "";
+    document.getElementById("sort").value = "date_desc";
+    doSearch(1);
+  }
+
+  async function doSearch(page) {
+    currentPage = page;
+    const q          = document.getElementById("q").value.trim();
+    const type       = document.getElementById("type").value;
+    const dateFrom   = document.getElementById("dateFrom").value;
+    const dateTo     = document.getElementById("dateTo").value;
+    const hasWebsite = document.getElementById("hasWebsite").value;
+    const sort       = document.getElementById("sort").value;
+
+    document.getElementById("result").innerHTML = '<div class="loading">加载中...</div>';
+    document.getElementById("pagination").innerHTML = "";
+
+    const params = new URLSearchParams({ q, type, page, dateFrom, dateTo, hasWebsite, sort });
+    const res = await fetch(`/search?${params}`);
+    const { total, results } = await res.json();
+
+    currentTotal = total;
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+
+    document.getElementById("meta").textContent = total
+      ? `共 ${total.toLocaleString()} 条结果，第 ${page}/${totalPages} 页`
+      : "暂无结果";
+
+    if (!results.length) {
+      document.getElementById("result").innerHTML = '<div class="empty">No results found</div>';
+      return;
+    }
+
+    const rows = results.map(r => {
+      const website = r.website && r.website !== "null" && r.website.trim()
+        ? `<a href="${r.website.match(/^https?:\/\//i) ? r.website : "http://" + r.website}" target="_blank">${r.website}</a>`
+        : `<span class="tag-null">—</span>`;
+      return `<tr>
+        <td class="ein-col">${r.ein || ""}</td>
+        <td>${r.name || ""}</td>
+        <td>${r.date || ""}</td>
+        <td>${website}</td>
+      </tr>`;
+    }).join("");
+
+    const s = document.getElementById("sort").value;
+    function thClass(col) { return s.startsWith(col) ? "active" : ""; }
+    function thArrow(col) {
+      if (!s.startsWith(col)) return '<span class="arrow">↕</span>';
+      return s.endsWith("_asc") ? '<span class="arrow">↑</span>' : '<span class="arrow">↓</span>';
+    }
+    function toggleSort(col) {
+      const sel = document.getElementById("sort");
+      const next = s === col + "_asc" ? col + "_desc" : col + "_asc";
+      sel.value = next;
+      doSearch(1);
+    }
+
+    document.getElementById("result").innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th style="width:120px" class="${thClass("ein")}" onclick="toggleSort('ein')">EIN ${thArrow("ein")}</th>
+            <th class="${thClass("name")}" onclick="toggleSort('name')">Organization Name ${thArrow("name")}</th>
+            <th style="width:110px" class="${thClass("date")}" onclick="toggleSort('date')">Date ${thArrow("date")}</th>
+            <th>Website</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+
+    renderPagination(page, totalPages);
+  }
+
+  function renderPagination(page, totalPages) {
+    if (totalPages <= 1) { document.getElementById("pagination").innerHTML = ""; return; }
+
+    const pages = [];
+    pages.push(1);
+    if (page > 3) pages.push("...");
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+    if (page < totalPages - 2) pages.push("...");
+    if (totalPages > 1) pages.push(totalPages);
+
+    const btns = pages.map(p => {
+      if (p === "...") return `<button disabled>…</button>`;
+      return `<button class="${p === page ? "active" : ""}" onclick="doSearch(${p})">${p}</button>`;
+    }).join("");
+
+    document.getElementById("pagination").innerHTML =
+      `<button ${page <= 1 ? "disabled" : ""} onclick="doSearch(${page - 1})">‹ 上一页</button>` +
+      btns +
+      `<button ${page >= totalPages ? "disabled" : ""} onclick="doSearch(${page + 1})">下一页 ›</button>`;
+  }
+</script>
+</body>
+</html>
