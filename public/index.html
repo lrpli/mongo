@@ -160,7 +160,12 @@
 
     const params = new URLSearchParams({ q, type, page, dateFrom, dateTo, hasWebsite, sort });
     const res = await fetch(`/search?${params}`);
-    const { total, results } = await res.json();
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById("result").innerHTML = `<div class="empty">请求失败：${data.error || res.status}</div>`;
+      return;
+    }
+    const { total, results } = data;
 
     currentTotal = total;
     const totalPages = Math.ceil(total / PAGE_SIZE);
