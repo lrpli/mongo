@@ -46,6 +46,7 @@
     a:hover { text-decoration: underline; }
     .tag-null { color: #ccc; font-size: 12px; }
     .ein-col { font-family: monospace; color: #555; }
+    .url-col { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* 分页 */
     .pagination { display: flex; gap: 4px; margin-top: 16px; justify-content: center; flex-wrap: wrap; }
@@ -191,7 +192,7 @@
         <td>${r.name || ""}</td>
         <td>${r.date || ""}</td>
         <td>${website}</td>
-        <td>${url}</td>
+        <td class="url-col" title="${r.url || ""}">${url}</td>
         <td id="ms-${i}" class="tag-null">…</td>
       </tr>`;
     }).join("");
@@ -217,7 +218,7 @@
             <th class="${thClass("name")}" onclick="toggleSort('name')">Organization Name ${thArrow("name")}</th>
             <th style="width:110px" class="${thClass("date")}" onclick="toggleSort('date')">Date ${thArrow("date")}</th>
             <th>Website</th>
-            <th>URL</th>
+            <th style="width:160px">URL</th>
             <th style="width:120px">MS Availability</th>
           </tr>
         </thead>
