@@ -183,11 +183,15 @@
       const website = r.website && r.website !== "null" && r.website.trim()
         ? `<a href="${r.website.match(/^https?:\/\//i) ? r.website : "http://" + r.website}" target="_blank">${r.website}</a>`
         : `<span class="tag-null">—</span>`;
+      const url = r.url && r.url !== "null" && r.url.trim()
+        ? `<a href="${r.url.match(/^https?:\/\//i) ? r.url : "http://" + r.url}" target="_blank">${r.url}</a>`
+        : `<span class="tag-null">—</span>`;
       return `<tr>
         <td class="ein-col">${r.ein || ""}</td>
         <td>${r.name || ""}</td>
         <td>${r.date || ""}</td>
         <td>${website}</td>
+        <td>${url}</td>
       </tr>`;
     }).join("");
 
@@ -212,6 +216,7 @@
             <th class="${thClass("name")}" onclick="toggleSort('name')">Organization Name ${thArrow("name")}</th>
             <th style="width:110px" class="${thClass("date")}" onclick="toggleSort('date')">Date ${thArrow("date")}</th>
             <th>Website</th>
+            <th>URL</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
