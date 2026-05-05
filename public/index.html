@@ -179,7 +179,7 @@
       return;
     }
 
-    const rows = results.map(r => {
+    const rows = results.map((r, i) => {
       const website = r.website && r.website !== "null" && r.website.trim()
         ? `<a href="${r.website.match(/^https?:\/\//i) ? r.website : "http://" + r.website}" target="_blank">${r.website}</a>`
         : `<span class="tag-null">—</span>`;
@@ -192,6 +192,7 @@
         <td>${r.date || ""}</td>
         <td>${website}</td>
         <td>${url}</td>
+        <td id="ms-${i}" class="tag-null">…</td>
       </tr>`;
     }).join("");
 
@@ -217,6 +218,7 @@
             <th style="width:110px" class="${thClass("date")}" onclick="toggleSort('date')">Date ${thArrow("date")}</th>
             <th>Website</th>
             <th>URL</th>
+            <th style="width:120px">MS Availability</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -224,6 +226,21 @@
     `;
 
     renderPagination(page, totalPages);
+
+    // 异步填充 MS Availability
+    results.forEach((r, i) => {
+      if (!r.name) return;
+      fetch(`https://signupapi.nonprofit.microsoft.com/api/v1/signup/domainavailability/${encodeURIComponent(r.name)}`)
+        .then(res => res.json())
+        .then(data => {
+          const el = document.getElementById(`ms-${i}`);
+          if (el) { el.textContent = data.responseCode || "—"; el.className = ""; }
+        })
+        .catch(() => {
+          const el = document.getElementById(`ms-${i}`);
+          if (el) el.textContent = "err";
+        });
+    });
   }
 
   function renderPagination(page, totalPages) {
