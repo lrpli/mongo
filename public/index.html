@@ -53,6 +53,9 @@
     .pagination button.active { background: #4f8ef7; color: #fff; border-color: #4f8ef7; }
     .pagination button:hover:not(.active):not(:disabled) { background: #f0f4ff; }
     .pagination button:disabled { color: #ccc; cursor: default; }
+    .pagination .goto { display: flex; align-items: center; gap: 6px; margin-left: 8px; font-size: 13px; color: #666; }
+    .pagination .goto input { width: 52px; padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: center; }
+    .pagination .goto button { min-width: unset; padding: 6px 10px; }
 
     .empty { text-align: center; padding: 60px; color: #bbb; font-size: 15px; }
     .loading { text-align: center; padding: 60px; color: #aaa; }
@@ -226,6 +229,12 @@
     renderPagination(page, totalPages);
   }
 
+  function gotoPage(totalPages) {
+    const val = parseInt(document.getElementById("gotoInput").value);
+    if (!val || val < 1 || val > totalPages) return;
+    doSearch(val);
+  }
+
   function renderPagination(page, totalPages) {
     if (totalPages <= 1) { document.getElementById("pagination").innerHTML = ""; return; }
 
@@ -244,7 +253,8 @@
     document.getElementById("pagination").innerHTML =
       `<button ${page <= 1 ? "disabled" : ""} onclick="doSearch(${page - 1})">‹ 上一页</button>` +
       btns +
-      `<button ${page >= totalPages ? "disabled" : ""} onclick="doSearch(${page + 1})">下一页 ›</button>`;
+      `<button ${page >= totalPages ? "disabled" : ""} onclick="doSearch(${page + 1})">下一页 ›</button>` +
+      `<span class="goto">跳至<input id="gotoInput" type="number" min="1" max="${totalPages}" placeholder="${page}" onkeydown="if(event.key==='Enter')gotoPage(${totalPages})" />页<button onclick="gotoPage(${totalPages})">GO</button></span>`;
   }
 </script>
 </body>
